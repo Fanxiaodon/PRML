@@ -1,6 +1,7 @@
 import struct
 import numpy as np
 from sklearn.svm import SVC
+import time
 
 
 def load_mnist(kind='train', number=5000):
@@ -27,9 +28,12 @@ def load_mnist(kind='train', number=5000):
 if __name__ == "__main__":
     images_train, labels_train = load_mnist(number=10000)
     images_test, labels_test = load_mnist(kind='t10k', number=1000)
+
+    ticks = time.time()
     clf = SVC(C=500, kernel='rbf', gamma='scale')
     clf.fit(images_train, labels_train)
     score = clf.score(images_test, labels_test)
+    print('训练时间：%.3f s' % (time.time() - ticks))
     print('得分：' + str(score))
     labels_result = clf.predict(images_test)
     print('实际标签：' + str(labels_test[0:100]))
