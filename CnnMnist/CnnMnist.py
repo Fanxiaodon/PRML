@@ -4,6 +4,9 @@ import torch.nn.functional as f
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+
+import MnistLoader
 
 
 class CnnNet(nn.Module):
@@ -21,6 +24,11 @@ class CnnNet(nn.Module):
         self.criterion = nn.CrossEntropyLoss()
 
     def forward(self, x):
+        """
+        前向传播函数，返回为一个size为[batch_size,features]的向量
+        :param x:
+        :return:
+        """
         x = self.pool(f.relu(self.conv1(x)))
         x = self.pool(f.relu(self.conv2(x)))
         x = x.view(-1, 16 * 5 * 5)
@@ -40,6 +48,8 @@ class CnnNet(nn.Module):
 
             # 前向传播+计算损失函数+反向传播
             output = self(inputs)
+            # criterion的输入为各个标签的神经网络输出分数，labels为一个batch中样本的索引
+            # 因此output.size = [batch_size, features], labels.size=[features]
             loss = self.criterion(output, labels)
             loss.backward()
             # 更新权系数
@@ -53,6 +63,12 @@ class CnnNet(nn.Module):
                 running_loss = 0.0
 
     def cal_accuracy(self, testloader, device):
+        """
+        测试集测试得分计算
+        :param testloader:
+        :param device:
+        :return:
+        """
         correct = 0
         total = 0
         # 不进行autograd
@@ -76,15 +92,11 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
-    transform = transforms.Compose([transforms.ToTensor()])
-    trainset = torchvision.datasets.MNIST(root='./data', train=True,
-                                          download=False, transform=transform)
+    trainset = MnistLoader.MyDataSet('data/MNIST/raw', transform=MnistLoader.ToTensor())
+    trainloader = DataLoader(trainset, batch_size=16, shuffle=True, num_workers=2)
 
-    testset = torchvision.datasets.MNIST(root='./data', train=False,
-                                         transform=transform, download=False)
-
-    trainloader = torch.utils.data.DataLoader(dataset=trainset, batch_size=16, shuffle=True, num_workers=4)
-    testloader = torch.utils.data.DataLoader(dataset=testset, batch_size=16, shuffle=True, num_workers=4)
+    testset = MnistLoader.MyDataSet('data/Mnist/raw', transform=MnistLoader.ToTensor())
+    testloader = DataLoader(testset, batch_size=16, shuffle=True, num_workers=2)
 
     net = CnnNet()
     net.to(device)
